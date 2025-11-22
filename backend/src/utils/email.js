@@ -35,5 +35,30 @@ export const sendOTP = async (email, otp) => {
   }
 };
 
+export const sendEmail = async (email, subject, message) => {
+  try {
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: email,
+      subject: subject || 'StockMind Notification',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">StockMind</h2>
+          <div style="padding: 20px; background-color: #f9fafb; border-radius: 8px; margin: 20px 0;">
+            ${message}
+          </div>
+          <p style="color: #6b7280; font-size: 12px;">This is an automated notification from StockMind.</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error('Email send error:', error);
+    return false;
+  }
+};
+
 
 

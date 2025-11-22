@@ -71,6 +71,9 @@ model User {
   transfers     Transfer[]
   adjustments   StockAdjustment[]
   stockMovements StockMovement[]
+  portfolio     Portfolio?
+  priceAlerts   PriceAlert[]
+  backtests     BacktestStrategy[]
 }
 
 model Category {
@@ -286,4 +289,136 @@ model StockMovement {
   @@index([movementType])
   @@index([createdAt])
   @@index([referenceId])
+}
+
+enum AlertType {
+  PRICE_ABOVE
+  PRICE_BELOW
+  PRICE_CHANGE_PERCENT
+  VOLUME_INCREASE
+}
+
+enum AlertStatus {
+  ACTIVE
+  TRIGGERED
+  DISABLED
+}
+
+enum SentimentType {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+}
+
+model Portfolio {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @unique @db.ObjectId
+  totalValue    Float    @default(0)
+  totalCost     Float    @default(0)
+  totalPnL      Float    @default(0)
+  dailyPnL      Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  holdings      StockHolding[]
+  history       PortfolioHistory[]
+}
+
+model StockHolding {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  portfolioId   String   @db.ObjectId
+  symbol        String
+  name          String
+  quantity      Float
+  buyPrice      Float
+  currentPrice  Float    @default(0)
+  totalCost     Float
+  currentValue  Float    @default(0)
+  pnl           Float    @default(0)
+  pnlPercent    Float    @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  portfolio     Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  @@index([portfolioId])
+  @@index([symbol])
+}
+
+model PortfolioHistory {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  portfolioId   String   @db.ObjectId
+  totalValue    Float
+  totalPnL      Float
+  date          DateTime @default(now())
+
+  portfolio     Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  @@index([portfolioId])
+  @@index([date])
+}
+
+model PriceAlert {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String      @db.ObjectId
+  symbol        String
+  alertType     AlertType
+  targetValue   Float?
+  targetPercent Float?
+  status        AlertStatus @default(ACTIVE)
+  triggeredAt   DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([symbol])
+  @@index([status])
+}
+
+model NewsSentiment {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  symbol        String
+  title         String
+  content       String
+  source        String?
+  url           String?
+  sentiment     SentimentType
+  sentimentScore Float
+  publishedAt   DateTime
+  createdAt     DateTime      @default(now())
+
+  @@index([symbol])
+  @@index([sentiment])
+  @@index([publishedAt])
+}
+
+model BacktestStrategy {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @db.ObjectId
+  name          String
+  symbol        String
+  strategy      String   // JSON string of strategy rules
+  startDate     DateTime
+  endDate       DateTime
+  initialCapital Float
+  finalCapital  Float?
+  returnPercent Float?
+  winRate       Float?
+  lossRate      Float?
+  maxDrawdown   Float?
+  totalTrades   Int      @default(0)
+  winningTrades Int      @default(0)
+  losingTrades  Int      @default(0)
+  equityCurve   String?  // JSON string of equity curve data
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([symbol])
+  @@index([createdAt])
 }

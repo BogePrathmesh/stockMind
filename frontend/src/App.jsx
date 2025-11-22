@@ -20,6 +20,10 @@ import Ledger from './pages/ledger/Ledger'
 import Warehouses from './pages/settings/Warehouses'
 import Categories from './pages/settings/Categories'
 import Profile from './pages/Profile'
+import Portfolio from './pages/portfolio/Portfolio'
+import Alerts from './pages/alerts/Alerts'
+import Sentiment from './pages/sentiment/Sentiment'
+import Backtest from './pages/backtest/Backtest'
 import Layout from './components/Layout'
 
 function PrivateRoute({ children }) {
@@ -52,6 +56,10 @@ function App() {
           }
         >
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="portfolio" element={<Portfolio />} />
+          <Route path="alerts" element={<Alerts />} />
+          <Route path="sentiment" element={<Sentiment />} />
+          <Route path="backtest" element={<Backtest />} />
           <Route path="products" element={<Products />} />
           <Route path="products/:id" element={<ProductDetail />} />
           <Route path="receipts" element={<Receipts />} />

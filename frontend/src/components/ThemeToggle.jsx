@@ -41,10 +41,11 @@ export default function ThemeToggle() {
   if (!mounted) {
     return (
       <button
-        className="p-2 rounded-lg bg-white dark:bg-[#0F1921] border border-gray-200 dark:border-gray-800"
+        className="p-2 rounded-lg bg-white dark:bg-[#0F1921] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#0B1315] transition-all duration-200"
         aria-label="Toggle theme"
+        disabled
       >
-        <Moon className="w-5 h-5 text-gray-700" />
+        <Moon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
       </button>
     )
   }
@@ -52,13 +53,14 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-lg bg-white dark:bg-[#0F1921] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#0B1315] transition-colors"
-      aria-label="Toggle theme"
+      className="p-2 rounded-lg bg-white dark:bg-[#0F1921] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#0B1315] transition-all duration-200 hover:scale-105 active:scale-95"
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
       {isDark ? (
-        <Sun className="w-5 h-5 text-amber-600" />
+        <Sun className="w-5 h-5 text-amber-500 dark:text-amber-400" />
       ) : (
-        <Moon className="w-5 h-5 text-gray-700" />
+        <Moon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
       )}
     </button>
   )

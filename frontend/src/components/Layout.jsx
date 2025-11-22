@@ -13,12 +13,21 @@ import {
   User,
   LogOut,
   Warehouse,
-  Tag
+  Tag,
+  Wallet,
+  Bell,
+  TrendingUp,
+  BarChart3
 } from 'lucide-react'
 import { cn } from '../utils/cn'
+import Chatbot from './Chatbot'
 
 const menuItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/portfolio', label: 'Portfolio', icon: Wallet },
+  { path: '/alerts', label: 'Price Alerts', icon: Bell },
+  { path: '/sentiment', label: 'Sentiment Analysis', icon: TrendingUp },
+  { path: '/backtest', label: 'Backtest Strategy', icon: BarChart3 },
   { path: '/products', label: 'Products', icon: Package },
   { path: '/receipts', label: 'Receipts', icon: Receipt },
   { path: '/deliveries', label: 'Deliveries', icon: Truck },
@@ -51,7 +60,9 @@ export default function Layout() {
             <h1 className="text-2xl font-bold text-black dark:text-amber-600">STOCKMASTER</h1>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Inventory Management</p>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+          </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4">
@@ -132,6 +143,9 @@ export default function Layout() {
       <main className="flex-1 overflow-y-auto bg-[#FAFAF9] dark:bg-[#0B1315] transition-colors">
         <Outlet />
       </main>
+
+      {/* Chatbot */}
+      <Chatbot />
     </div>
   )
 }

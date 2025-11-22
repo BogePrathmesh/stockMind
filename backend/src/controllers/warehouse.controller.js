@@ -125,3 +125,6 @@ export const deleteWarehouse = async (req, res) => {
 
 
 
+
+
+

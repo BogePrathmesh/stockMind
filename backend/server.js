@@ -21,9 +21,22 @@ import categoryRoutes from './src/routes/category.routes.js';
 import dashboardRoutes from './src/routes/dashboard.routes.js';
 import profileRoutes from './src/routes/profile.routes.js';
 import aiRoutes from './src/routes/ai.routes.js';
+import portfolioRoutes from './src/routes/portfolio.routes.js';
+import alertRoutes from './src/routes/alert.routes.js';
+import sentimentRoutes from './src/routes/sentiment.routes.js';
+import backtestRoutes from './src/routes/backtest.routes.js';
+import chatbotRoutes from './src/routes/chatbot.routes.js';
+import stockRoutes from './src/routes/stock.routes.js';
 
 // Socket.io setup
 import { setupSocketIO } from './src/services/socket.service.js';
+
+// Alert checking
+import cron from 'node-cron';
+import { checkAlerts } from './src/controllers/alert.controller.js';
+
+// Real-time stock price updates
+import { startStockPriceUpdates } from './src/services/stockPriceUpdater.service.js';
 
 dotenv.config();
 
@@ -69,6 +82,12 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/alerts', alertRoutes);
+app.use('/api/sentiment', sentimentRoutes);
+app.use('/api/backtest', backtestRoutes);
+app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/stock', stockRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -94,6 +113,18 @@ const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Schedule alert checking every 5 minutes
+  cron.schedule('*/5 * * * *', () => {
+    console.log('Checking price alerts...');
+    checkAlerts().catch(console.error);
+  });
+  
+  console.log('✅ Alert checking scheduled (every 5 minutes)');
+  
+  // Start real-time stock price updates
+  startStockPriceUpdates();
+  console.log('✅ Real-time stock price updates started (every 30 seconds)');
 });
 
 export { io };
