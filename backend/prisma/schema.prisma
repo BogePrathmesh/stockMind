@@ -1,0 +1,289 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  INVENTORY_MANAGER
+  WAREHOUSE_STAFF
+}
+
+enum ReceiptStatus {
+  DRAFT
+  WAITING
+  READY
+  DONE
+  CANCELED
+}
+
+enum DeliveryStatus {
+  DRAFT
+  WAITING
+  READY
+  DONE
+  CANCELED
+}
+
+enum TransferStatus {
+  DRAFT
+  WAITING
+  READY
+  DONE
+  CANCELED
+}
+
+enum AdjustmentReason {
+  DAMAGE
+  THEFT
+  EXPIRY
+  MANUAL_CORRECTION
+  OTHER
+}
+
+enum StockMovementType {
+  RECEIPT
+  DELIVERY
+  TRANSFER
+  ADJUSTMENT
+}
+
+model User {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  email         String   @unique
+  password      String
+  role          UserRole @default(WAREHOUSE_STAFF)
+  profileImage  String?
+  otp           String?
+  otpExpiry     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  receipts      Receipt[]
+  deliveries    Delivery[]
+  transfers     Transfer[]
+  adjustments   StockAdjustment[]
+  stockMovements StockMovement[]
+}
+
+model Category {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products    Product[]
+}
+
+model Warehouse {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String   @unique
+  address     String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products    ProductStock[]
+  receipts    Receipt[]
+  deliveries  Delivery[]
+  transfersFrom Transfer[] @relation("TransferFrom")
+  transfersTo   Transfer[] @relation("TransferTo")
+  adjustments StockAdjustment[]
+  stockMovements StockMovement[]
+}
+
+model Product {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  sku           String   @unique
+  categoryId    String   @db.ObjectId
+  unitOfMeasure String
+  image         String?
+  description   String?
+  reorderLevel  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  category      Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  stock         ProductStock[]
+  receiptItems  ReceiptItem[]
+  deliveryItems DeliveryItem[]
+  transferItems TransferItem[]
+  adjustments   StockAdjustment[]
+  stockMovements StockMovement[]
+
+  @@index([categoryId])
+}
+
+model ProductStock {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId   String   @db.ObjectId
+  warehouseId String   @db.ObjectId
+  quantity    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, warehouseId])
+  @@index([productId])
+  @@index([warehouseId])
+}
+
+model Receipt {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  receiptId   String        @unique
+  supplier    String
+  warehouseId String        @db.ObjectId
+  status      ReceiptStatus @default(DRAFT)
+  createdById String        @db.ObjectId
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  validatedAt DateTime?
+
+  warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
+  createdBy   User          @relation(fields: [createdById], references: [id])
+  items       ReceiptItem[]
+
+  @@index([status])
+  @@index([warehouseId])
+  @@index([createdAt])
+}
+
+model ReceiptItem {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  receiptId String  @db.ObjectId
+  productId String @db.ObjectId
+  quantity  Int
+  unitPrice Float?
+
+  receipt   Receipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@index([receiptId])
+  @@index([productId])
+}
+
+model Delivery {
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  deliveryId  String         @unique
+  customer    String
+  warehouseId String         @db.ObjectId
+  status      DeliveryStatus @default(DRAFT)
+  createdById String         @db.ObjectId
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  validatedAt DateTime?
+
+  warehouse   Warehouse      @relation(fields: [warehouseId], references: [id])
+  createdBy   User           @relation(fields: [createdById], references: [id])
+  items       DeliveryItem[]
+
+  @@index([status])
+  @@index([warehouseId])
+  @@index([createdAt])
+}
+
+model DeliveryItem {
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  deliveryId String @db.ObjectId
+  productId  String @db.ObjectId
+  quantity   Int
+
+  delivery   Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id])
+
+  @@index([deliveryId])
+  @@index([productId])
+}
+
+model Transfer {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  transferId  String        @unique
+  fromWarehouseId String     @db.ObjectId
+  toWarehouseId   String     @db.ObjectId
+  status      TransferStatus @default(DRAFT)
+  notes       String?
+  createdById String        @db.ObjectId
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  validatedAt DateTime?
+
+  fromWarehouse Warehouse @relation("TransferFrom", fields: [fromWarehouseId], references: [id])
+  toWarehouse   Warehouse @relation("TransferTo", fields: [toWarehouseId], references: [id])
+  createdBy     User      @relation(fields: [createdById], references: [id])
+  items         TransferItem[]
+
+  @@index([status])
+  @@index([fromWarehouseId])
+  @@index([toWarehouseId])
+  @@index([createdAt])
+}
+
+model TransferItem {
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  transferId String  @db.ObjectId
+  productId  String  @db.ObjectId
+  quantity   Int
+
+  transfer   Transfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id])
+
+  @@index([transferId])
+  @@index([productId])
+}
+
+model StockAdjustment {
+  id          String            @id @default(auto()) @map("_id") @db.ObjectId
+  adjustmentId String           @unique
+  productId   String            @db.ObjectId
+  warehouseId String            @db.ObjectId
+  reason      AdjustmentReason
+  quantity    Int
+  previousStock Int
+  newStock    Int
+  notes       String?
+  createdById String            @db.ObjectId
+  createdAt   DateTime          @default(now())
+
+  product     Product   @relation(fields: [productId], references: [id])
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  createdBy   User      @relation(fields: [createdById], references: [id])
+
+  @@index([productId])
+  @@index([warehouseId])
+  @@index([createdAt])
+}
+
+model StockMovement {
+  id          String            @id @default(auto()) @map("_id") @db.ObjectId
+  productId   String            @db.ObjectId
+  warehouseId String            @db.ObjectId
+  movementType StockMovementType
+  change      Int
+  previousStock Int
+  newStock    Int
+  referenceId String?
+  notes       String?
+  createdById String            @db.ObjectId
+  createdAt   DateTime          @default(now())
+
+  product     Product   @relation(fields: [productId], references: [id])
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  createdBy   User      @relation(fields: [createdById], references: [id])
+
+  @@index([productId])
+  @@index([warehouseId])
+  @@index([movementType])
+  @@index([createdAt])
+  @@index([referenceId])
+}
